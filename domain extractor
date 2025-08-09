@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Extract Domains Only</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark-mode {
+      background: #121212;
+      color: #f5f5f5;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      padding: 10px 35px 10px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: white;
+      font-family: monospace;
+      resize: none;
+      box-sizing: border-box;
+      transition: all 0.3s ease, background 0.3s, color 0.3s;
+    }
+    body.dark-mode textarea {
+      background: #1e1e1e;
+      color: #fff;
+      border: 1px solid #444;
+    }
+    textarea.expanded {
+      height: 500px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      margin-top: 8px;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: background 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    h2, h3 {
+      margin-top: 20px;
+    }
+    .outputs {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .section {
+      flex: 1;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark-mode .section {
+      background: #1e1e1e;
+      box-shadow: 0 0 5px rgba(255,255,255,0.1);
+    }
+    .count {
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    body.dark-mode .count {
+      color: #ddd;
+    }
+    .textarea-container {
+      position: relative;
+      width: 100%;
+    }
+    .fullscreen-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: transparent;
+      color: inherit;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .fullscreen-btn:hover {
+      background: rgba(0,0,0,0.05);
+    }
+    body.dark-mode .fullscreen-btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .fullscreen-btn::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      top: 50%;
+      right: 110%;
+      transform: translateY(-50%);
+      background: #333;
+      color: #fff;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .fullscreen-btn:hover::after {
+      opacity: 0.9;
+    }
+    .dark-mode-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #333;
+      transition: color 0.3s;
+    }
+    body.dark-mode .dark-mode-toggle {
+      color: #fff;
+    }
+    .copy-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2;
+    }
+    body.dark-mode .copy-btn svg {
+      stroke: white;
+    }
+  </style>
+</head>
+<body>
+  <button class="dark-mode-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
+
+  <h2>Extract Only Domains & Subdomains from Text</h2>
+
+  <textarea id="input" placeholder="Paste your text here..."></textarea><br>
+  <button onclick="extractDomains()">Extract Domains</button>
+
+  <div class="outputs">
+    <div class="section">
+      <h3>Unsorted Results</h3>
+      <span class="count" id="countOriginal">Count: 0</span>
+      <div class="textarea-container">
+        <textarea id="output"></textarea>
+        <button class="fullscreen-btn" onclick="toggleExpand('output', this)" data-tooltip="Fullscreen">⛶</button>
+      </div>
+      <button class="copy-btn" onclick="copyToClipboard('output')" title="Copy">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+    </div>
+
+    <div class="section">
+      <h3>Sorted Results</h3>
+      <span class="count" id="countSorted">Count: 0</span>
+      <div class="textarea-container">
+        <textarea id="sortedOutput"></textarea>
+        <button class="fullscreen-btn" onclick="toggleExpand('sortedOutput', this)" data-tooltip="Fullscreen">⛶</button>
+      </div>
+      <button class="copy-btn" onclick="copyToClipboard('sortedOutput')" title="Copy">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+    </div>
+  </div>
+
+  <script>
+    function extractDomains() {
+      const inputText = document.getElementById("input").value;
+      const domainRegex = /\b(?:https?:\/\/|ftp:\/\/)?(?:www\.)?([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)\b/g;
+
+      const matches = [];
+      let match;
+      while ((match = domainRegex.exec(inputText)) !== null) {
+        matches.push(match[1].toLowerCase());
+      }
+
+      const uniqueDomains = matches.filter((v, i, a) => a.indexOf(v) === i);
+      const sortedDomains = [...uniqueDomains].sort();
+
+      document.getElementById("output").value = uniqueDomains.join("\n");
+      document.getElementById("sortedOutput").value = sortedDomains.join("\n");
+
+      document.getElementById("countOriginal").textContent = "Count: " + uniqueDomains.length;
+      document.getElementById("countSorted").textContent = "Count: " + sortedDomains.length;
+    }
+
+    function copyToClipboard(id) {
+      const textarea = document.getElementById(id);
+      textarea.select();
+      document.execCommand("copy");
+      alert("Copied to clipboard!");
+    }
+
+    function toggleExpand(id, btn) {
+      const textarea = document.getElementById(id);
+      textarea.classList.toggle("expanded");
+      if (textarea.classList.contains("expanded")) {
+        btn.setAttribute("data-tooltip", "Restore Size");
+      } else {
+        btn.setAttribute("data-tooltip", "Fullscreen");
+      }
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      const btn = document.querySelector(".dark-mode-toggle");
+      btn.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+    }
+  </script>
+</body>
+</html>
